@@ -2,7 +2,7 @@ services:
   - type: web
     name: youtube-mp3
     env: node
-    buildCommand: pip install yt-dlp && npm install
+    buildCommand: pip install -U yt-dlp && npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
