@@ -1,15 +1,34 @@
 const express = require('express');
-const { execFile, spawn } = require('child_process');
+const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const sanitize = require('sanitize-filename');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Allow at most 10 info lookups per IP per minute
+const infoLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment before trying again.' },
+});
+
+// Allow at most 5 downloads per IP per minute
+const downloadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many download requests. Please wait a moment before trying again.',
+});
 
 // Validate that a string looks like a YouTube URL
 function isValidYouTubeUrl(url) {
@@ -23,7 +42,7 @@ function isValidYouTubeUrl(url) {
 }
 
 // POST /api/info — fetch video title before download
-app.post('/api/info', (req, res) => {
+app.post('/api/info', infoLimiter, (req, res) => {
   const { url } = req.body;
 
   if (!url || typeof url !== 'string') {
@@ -44,7 +63,7 @@ app.post('/api/info', (req, res) => {
 });
 
 // GET /api/download — stream the MP3 directly to the client
-app.get('/api/download', (req, res) => {
+app.get('/api/download', downloadLimiter, (req, res) => {
   const { url } = req.query;
 
   if (!url || typeof url !== 'string') {
