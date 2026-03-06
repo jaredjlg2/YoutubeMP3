@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube to MP3</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #e2e8f0;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1.5rem;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: #ff0000;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 0.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #ff0000;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    input[type="text"]::placeholder { color: #64748b; }
+
+    .btn {
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.75rem;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: #ff0000;
+      color: #fff;
+      width: 100%;
+      padding: 0.875rem;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+    .video-preview {
+      display: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .video-preview .video-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      word-break: break-word;
+    }
+
+    .video-preview .video-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 0.25rem;
+    }
+
+    .status {
+      min-height: 1.5rem;
+      font-size: 0.875rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .status.loading { color: #94a3b8; }
+    .status.success { color: #4ade80; }
+    .status.error   { color: #f87171; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .progress-bar-wrap {
+      display: none;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 0.75rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #ff0000;
+      border-radius: 9999px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">▶</div>
+      <h1>YouTube to MP3</h1>
+    </div>
+    <p class="subtitle">Paste a YouTube link and download the audio as an MP3 file.</p>
+
+    <label for="urlInput">YouTube URL</label>
+    <div class="input-group">
+      <input
+        type="text"
+        id="urlInput"
+        placeholder="https://www.youtube.com/watch?v=..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+
+    <div class="video-preview" id="videoPreview">
+      <div class="video-label">Video title</div>
+      <div class="video-title" id="videoTitle"></div>
+    </div>
+
+    <button class="btn btn-primary" id="downloadBtn" onclick="startDownload()">
+      ⬇ Download MP3
+    </button>
+
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <script>
+    const urlInput     = document.getElementById('urlInput');
+    const downloadBtn  = document.getElementById('downloadBtn');
+    const statusMsg    = document.getElementById('statusMsg');
+    const videoPreview = document.getElementById('videoPreview');
+    const videoTitle   = document.getElementById('videoTitle');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressBar  = document.getElementById('progressBar');
+
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startDownload();
+    });
+
+    function setStatus(msg, type) {
+      statusMsg.textContent = msg;
+      statusMsg.className = 'status ' + (type || '');
+    }
+
+    function setLoading(loading) {
+      downloadBtn.disabled = loading;
+      downloadBtn.innerHTML = loading
+        ? '<span class="spinner"></span> Processing…'
+        : '⬇ Download MP3';
+    }
+
+    function animateProgress() {
+      progressWrap.style.display = 'block';
+      let pct = 0;
+      const id = setInterval(() => {
+        pct = Math.min(pct + Math.random() * 4, 90);
+        progressBar.style.width = pct + '%';
+      }, 400);
+      return () => {
+        clearInterval(id);
+        progressBar.style.width = '100%';
+        setTimeout(() => {
+          progressWrap.style.display = 'none';
+          progressBar.style.width = '0%';
+        }, 600);
+      };
+    }
+
+    async function startDownload() {
+      const url = urlInput.value.trim();
+      if (!url) {
+        setStatus('Please enter a YouTube URL.', 'error');
+        urlInput.focus();
+        return;
+      }
+
+      // Basic client-side URL check
+      try {
+        const parsed = new URL(url);
+        const valid = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com'];
+        if (!valid.includes(parsed.hostname)) {
+          setStatus('Only YouTube URLs are supported.', 'error');
+          return;
+        }
+      } catch {
+        setStatus('Please enter a valid URL.', 'error');
+        return;
+      }
+
+      setLoading(true);
+      videoPreview.style.display = 'none';
+      setStatus('Fetching video info…', 'loading');
+
+      // Step 1: fetch title
+      try {
+        const infoRes = await fetch('/api/info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const info = await infoRes.json();
+        if (!infoRes.ok) {
+          setStatus(info.error || 'Could not fetch video info.', 'error');
+          setLoading(false);
+          return;
+        }
+        videoTitle.textContent = info.title;
+        videoPreview.style.display = 'block';
+      } catch {
+        setStatus('Network error. Please try again.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: trigger download
+      setStatus('Downloading and converting to MP3… this may take a moment.', 'loading');
+      const stopProgress = animateProgress();
+
+      try {
+        const dlRes = await fetch('/api/download?' + new URLSearchParams({ url }));
+        stopProgress();
+
+        if (!dlRes.ok) {
+          const errText = await dlRes.text();
+          setStatus(errText || 'Download failed.', 'error');
+          setLoading(false);
+          return;
+        }
+
+        // Trigger browser file download
+        const blob = await dlRes.blob();
+        const disposition = dlRes.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename\*?=(?:UTF-\d+'[^']*'|"?)([^";\n]+)"?/i);
+        const filename = match ? decodeURIComponent(match[1].trim()) : 'audio.mp3';
+
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
+
+        setStatus('✓ Download complete!', 'success');
+      } catch {
+        stopProgress();
+        setStatus('Network error during download. Please try again.', 'error');
+      }
+
+      setLoading(false);
+    }
+  </script>
+</body>
+</html>
