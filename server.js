@@ -53,8 +53,17 @@ app.post('/api/info', infoLimiter, (req, res) => {
     return res.status(400).json({ error: 'Only YouTube URLs are supported.' });
   }
 
-  execFile('yt-dlp', ['--print', 'title', '--no-playlist', url], { timeout: 15000 }, (err, stdout) => {
+  const infoArgs = [
+    '--no-warnings',
+    '--print', 'title',
+    '--no-playlist',
+    '--extractor-args', 'youtube:player_client=ios',
+    url,
+  ];
+
+  execFile('yt-dlp', infoArgs, { timeout: 30000 }, (err, stdout, stderr) => {
     if (err) {
+      console.error('yt-dlp info error:', stderr || err.message);
       return res.status(400).json({ error: 'Could not fetch video info. Please check the URL.' });
     }
     const title = stdout.trim();
@@ -85,10 +94,12 @@ app.get('/api/download', downloadLimiter, (req, res) => {
   const outputTemplate = path.join(tmpDir, '%(title)s.%(ext)s');
 
   const ytDlpArgs = [
+    '--no-warnings',
     '--no-playlist',
     '-x',
     '--audio-format', 'mp3',
     '--audio-quality', '0',
+    '--extractor-args', 'youtube:player_client=ios',
     '-o', outputTemplate,
     '--print', 'after_move:filepath',
     url,
